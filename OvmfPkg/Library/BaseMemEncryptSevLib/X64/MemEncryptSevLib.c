@@ -204,6 +204,8 @@ SetMemoryEncDecHypercall3 (
 
       Ret = RETURN_NO_MAPPING;
     }
+  } else {
+    Ret = RETURN_SUCCESS;
   }
 
   return Ret;
