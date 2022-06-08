@@ -146,6 +146,41 @@ HypervisorSnpFeatureCheck (
 }
 
 /**
+   Convert the GHCB page to shared using MSR Protocol
+
+   SEV-ES needs GHCB page to be marked shared.
+
+**/
+VOID
+SevEsMakeGhcbShared(
+		    EFI_PHYSICAL_ADDRESS Address
+		    )
+{
+  MSR_SEV_ES_GHCB_REGISTER  Msr;
+
+  //
+  // Use the GHCB MSR Protocol to make the GHCB GPA shared
+  //
+  Msr.GhcbPhysicalAddress      = Address & ~EFI_PAGE_MASK;
+  Msr.SnpPageStateChangeRequest.Function = GHCB_INFO_SNP_PAGE_STATE_CHANGE_REQUEST;
+  Msr.SnpPageStateChangeRequest.Operation = GHCB_INFO_SNP_PSC_OP_SHARED;
+  AsmWriteMsr64 (MSR_SEV_ES_GHCB, Msr.GhcbPhysicalAddress);
+
+  AsmVmgExit ();
+
+  Msr.GhcbPhysicalAddress = AsmReadMsr64 (MSR_SEV_ES_GHCB);
+
+  //
+  // Verify the hypervisor response.
+  //
+  if ((Msr.SnpPageStateChangeResponse.Function != GHCB_INFO_SNP_PAGE_STATE_CHANGE_RESPONSE) ||
+      ((Msr.SnpPageStateChangeResponse.ErrorCode != 0)))
+    {
+      SevEsProtocolFailure (GHCB_TERMINATE_GHCB_GENERAL);
+    }
+}
+
+/**
   Validate the SEV-ES/GHCB protocol level.
 
   Verify that the level of SEV-ES/GHCB protocol supported by the hypervisor
@@ -205,6 +240,8 @@ SevEsProtocolCheck (
     // before it is used.
     //
     SevSnpGhcbRegister ((EFI_PHYSICAL_ADDRESS)(UINTN)FixedPcdGet32 (PcdOvmfSecGhcbBase));
+  } else if (SevEsIsEnabled ()) {
+    SevEsMakeGhcbShared ((EFI_PHYSICAL_ADDRESS)(UINTN)FixedPcdGet32 (PcdOvmfSecGhcbBase));
   }
 
   //

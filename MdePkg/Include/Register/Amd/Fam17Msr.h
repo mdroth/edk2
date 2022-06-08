@@ -61,6 +61,16 @@ typedef union {
   struct {
     UINT64    Function         : 12;
     UINT64    GuestFrameNumber : 40;
+/*
+ * SNP Page State Change Operation
+ *
+ * GHCBData[55:52] - Page operation:
+ *   0x0001     Page assignment, Private
+ *   0x0002     Page assignment, Shared
+ */
+#define GHCB_INFO_SNP_PSC_OP_PRIVATE 1
+#define GHCB_INFO_SNP_PSC_OP_SHARED  2
+
     UINT64    Operation        : 4;
     UINT64    Reserved         : 8;
   } SnpPageStateChangeRequest;
