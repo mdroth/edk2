@@ -50,5 +50,8 @@
 [Guids]
   gConfidentialComputingSevSnpBlobGuid
 
+[Protocols]
+  gEdkiiMemoryAcceptProtocolGuid
+
 [Pcd]
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfHostBridgePciDevId

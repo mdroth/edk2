@@ -33,8 +33,5 @@ MemEncryptSevSnpPreValidateSystemRam (
     return;
   }
 
-  //
-  // All the pre-validation must be completed in the PEI phase.
-  //
-  ASSERT (FALSE);
+  InternalSetPageState (BaseAddress, NumPages, SevSnpPagePrivate, TRUE);
 }

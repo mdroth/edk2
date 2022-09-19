@@ -20,6 +20,11 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Guid/ConfidentialComputingSevSnpBlob.h>
 #include <Library/PcdLib.h>
+#include <Protocol/MemoryAccept.h>
+
+#define IS_ALIGNED(x, y)  ((((x) & (y - 1)) == 0))
+
+STATIC EFI_HANDLE  mAmdDxeHandle = NULL;
 
 STATIC CONFIDENTIAL_COMPUTING_SNP_BLOB_LOCATION  mSnpBootDxeTable = {
   SIGNATURE_32 ('A',                                    'M', 'D', 'E'),
@@ -29,6 +34,30 @@ STATIC CONFIDENTIAL_COMPUTING_SNP_BLOB_LOCATION  mSnpBootDxeTable = {
   FixedPcdGet32 (PcdOvmfSnpSecretsSize),
   (UINT64)(UINTN)FixedPcdGet32 (PcdOvmfCpuidBase),
   FixedPcdGet32 (PcdOvmfCpuidSize),
+};
+
+EFI_STATUS
+EFIAPI
+AmdSnpAcceptMemory (
+  IN EDKII_MEMORY_ACCEPT_PROTOCOL  *This,
+  IN EFI_PHYSICAL_ADDRESS          StartAddress,
+  IN UINTN                         Size
+  )
+{
+  ASSERT (IS_ALIGNED (Size, SIZE_4KB));
+
+  if (Size != 0) {
+    MemEncryptSevSnpPreValidateSystemRam (
+      StartAddress,
+      EFI_SIZE_TO_PAGES (Size)
+      );
+  }
+
+  return EFI_SUCCESS;
+}
+
+STATIC EDKII_MEMORY_ACCEPT_PROTOCOL  mMemoryAcceptProtocol = {
+  AmdSnpAcceptMemory
 };
 
 EFI_STATUS
@@ -152,6 +181,14 @@ AmdSevDxeEntryPoint (
   // It contains the location for both the Secrets and CPUID page.
   //
   if (MemEncryptSevSnpIsEnabled ()) {
+    Status = gBS->InstallProtocolInterface (
+                    &mAmdDxeHandle,
+                    &gEdkiiMemoryAcceptProtocolGuid,
+                    EFI_NATIVE_INTERFACE,
+                    &mMemoryAcceptProtocol
+                    );
+    ASSERT_EFI_ERROR (Status);
+
     return gBS->InstallConfigurationTable (
                   &gConfidentialComputingSevSnpBlobGuid,
                   &mSnpBootDxeTable
