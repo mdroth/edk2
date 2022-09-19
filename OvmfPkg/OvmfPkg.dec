@@ -470,3 +470,10 @@
   #  firmware contains a CSM (Compatibility Support Module).
   #
   gUefiOvmfPkgTokenSpaceGuid.PcdCsmEnable|FALSE|BOOLEAN|0x35
+
+  ## Indicates if only memory below 4GB should be accepted. This is needed since
+  #  there are OS kernels that exist where the SEV-SNP support does not support
+  #  unaccepted memory.
+  #   TRUE  - Only memory below 4GB is accepted
+  #   FALSE - All memory is accepted
+  gUefiOvmfPkgTokenSpaceGuid.PcdLazyAcceptMemory|FALSE|BOOLEAN|0x68

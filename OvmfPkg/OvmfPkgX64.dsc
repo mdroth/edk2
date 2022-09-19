@@ -32,6 +32,7 @@
   DEFINE SECURE_BOOT_ENABLE      = FALSE
   DEFINE SMM_REQUIRE             = FALSE
   DEFINE SOURCE_DEBUG_ENABLE     = FALSE
+  DEFINE LAZY_ACCEPT_MEMORY      = FALSE
 
 !include OvmfPkg/OvmfTpmDefines.dsc.inc
 
@@ -511,6 +512,9 @@
   gUefiOvmfPkgTokenSpaceGuid.PcdSmmSmramRequire|TRUE
   gUefiCpuPkgTokenSpaceGuid.PcdCpuHotPlugSupport|TRUE
   gEfiMdeModulePkgTokenSpaceGuid.PcdEnableVariableRuntimeCache|FALSE
+!endif
+!if $(LAZY_ACCEPT_MEMORY) == TRUE
+  gUefiOvmfPkgTokenSpaceGuid.PcdLazyAcceptMemory|TRUE
 !endif
 
 [PcdsFixedAtBuild]
