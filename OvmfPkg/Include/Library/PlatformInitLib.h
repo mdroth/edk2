@@ -112,6 +112,13 @@ PlatformAddIoMemoryRangeHob (
 
 VOID
 EFIAPI
+PlatformAddUnacceptedMemoryBaseSizeHob (
+  IN EFI_PHYSICAL_ADDRESS  MemoryBase,
+  IN UINT64                MemorySize
+  );
+
+VOID
+EFIAPI
 PlatformAddMemoryBaseSizeHob (
   IN EFI_PHYSICAL_ADDRESS  MemoryBase,
   IN UINT64                MemorySize

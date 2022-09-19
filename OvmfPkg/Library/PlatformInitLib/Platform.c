@@ -20,6 +20,7 @@
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
 #include <Library/IoLib.h>
+#include <Library/MemEncryptSevLib.h>
 #include <IndustryStandard/I440FxPiix4.h>
 #include <IndustryStandard/Microvm.h>
 #include <IndustryStandard/Pci22.h>
@@ -33,6 +34,7 @@
 #include <Guid/SystemNvDataGuid.h>
 #include <Guid/VariableFormat.h>
 #include <OvmfPlatforms.h>
+#include <Pi/PrePiHob.h>
 
 #include <Library/PlatformInitLib.h>
 
@@ -91,11 +93,73 @@ PlatformAddIoMemoryRangeHob (
 
 VOID
 EFIAPI
+PlatformAddUnacceptedMemoryBaseSizeHob (
+  IN EFI_PHYSICAL_ADDRESS  MemoryBase,
+  IN UINT64                MemorySize
+  )
+{
+  BuildResourceDescriptorHob (
+    BZ3937_EFI_RESOURCE_MEMORY_UNACCEPTED,
+    EFI_RESOURCE_ATTRIBUTE_PRESENT |
+    EFI_RESOURCE_ATTRIBUTE_INITIALIZED |
+    EFI_RESOURCE_ATTRIBUTE_UNCACHEABLE |
+    EFI_RESOURCE_ATTRIBUTE_WRITE_COMBINEABLE |
+    EFI_RESOURCE_ATTRIBUTE_WRITE_THROUGH_CACHEABLE |
+    EFI_RESOURCE_ATTRIBUTE_WRITE_BACK_CACHEABLE |
+    EFI_RESOURCE_ATTRIBUTE_TESTED,
+    MemoryBase,
+    MemorySize
+    );
+}
+
+VOID
+EFIAPI
 PlatformAddMemoryBaseSizeHob (
   IN EFI_PHYSICAL_ADDRESS  MemoryBase,
   IN UINT64                MemorySize
   )
 {
+  //
+  // If lazy memory acceptance is in place and SNP is enabled, then check if
+  // some or all of the memory range must be marked unaccepted.
+  //
+  if (FeaturePcdGet (PcdLazyAcceptMemory) && MemEncryptSevSnpIsEnabled ()) {
+    //
+    // Mark memory above 4GB as unaccepted memory.
+    //
+    if ((MemoryBase + MemorySize) > SIZE_4GB) {
+      EFI_PHYSICAL_ADDRESS  UnacceptedBase;
+      UINT64                UnacceptedSize;
+      UINT64                AcceptedSize;
+
+      //
+      // Calculate the memory range that must be marked unaccepted. Any
+      // memory below the limit, will be marked as system memory.
+      //
+      UnacceptedBase = MAX (SIZE_4GB, MemoryBase);
+      AcceptedSize   = (UINT64)(UnacceptedBase - MemoryBase);
+      UnacceptedSize = MemorySize - AcceptedSize;
+
+      PlatformAddUnacceptedMemoryBaseSizeHob (
+        UnacceptedBase,
+        UnacceptedSize
+        );
+
+      //
+      // If the whole range was marked unaccepted then there is nothing else
+      // to do.
+      //
+      if (AcceptedSize == 0) {
+        return;
+      }
+
+      //
+      // Adjust the size of memory to be marked as system memory.
+      //
+      MemorySize = AcceptedSize;
+    }
+  }
+
   BuildResourceDescriptorHob (
     EFI_RESOURCE_SYSTEM_MEMORY,
     EFI_RESOURCE_ATTRIBUTE_PRESENT |

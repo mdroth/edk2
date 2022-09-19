@@ -48,6 +48,7 @@
   QemuFwCfgLib
   QemuFwCfgSimpleParserLib
   MemoryAllocationLib
+  MemEncryptSevLib
   MtrrLib
   PcdLib
   PciLib
@@ -102,3 +103,4 @@
 
 [FeaturePcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSwitchToLongMode
+  gUefiOvmfPkgTokenSpaceGuid.PcdLazyAcceptMemory
